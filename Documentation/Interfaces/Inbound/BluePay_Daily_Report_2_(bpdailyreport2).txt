@@ -1,0 +1,222 @@
+###
+# BluePay 2.0 "Daily Report" V2 Interface
+
+Last Update: 06/07/2013
+
+# Description
+
+This interface is intended to be polled by a merchant for the purpose of returning transaction details.
+
+The URL of this interface is currently:
+https://secure.bluepay.com/interfaces/bpdailyreport2
+
+# Input format
+
+Input to this web service is formatted as a standard HTTP "POST" is formatted. 
+The parameters to the service may be URI-encoded in the body of the request,
+as is standard for a POST. 
+
+# Output format
+
+Output will be in the immediate response to the POST, in standard HTTP response
+format with a header and a body separated by a newline.  The header contains 
+and HTTP status line which will indicate a status of 200 for success and 400
+for an error or other failure.  If successful, the body of the response will 
+contain a number of lines, one for each updated transaction.  Each line contains
+a comma-separated list of values you may use to tie the transaction back to 
+data in your own system.  If failed, the output will contain only a single line,
+containing a message indicating the reason for failure.  Any commas existing in 
+the data will be escaped by preceding them with a backslash character: ',' 
+becomes '\,'.
+
+# Input parameters
+
+ACCOUNT_ID
+  Set to your 12-digit BluePay 2.0 Account ID.
+REPORT_START_DATE
+REPORT_END_DATE
+  These are the dates within which transactions will be reported.  Dates
+  are formatted in ISO standard format:  YYYY-MM-DD.  The report will begin midnight
+  of the start day, and end at 11:59:59.999999 on the day before the end date.  So,
+  for example, if you wish to get the list of all status updated on 2006-08-08, you
+  would set REPORT_START_DATE to 2006-08-08 and REPORT_END_DATE to 2006-08-09.
+RESPONSEVERSION
+  Current version is 2. If not set response will only contain version 1 fields.
+TAMPER_PROOF_SEAL
+  And md5 hash used to verify the request.  This md5 should be generated as follows:
+
+  1) Create a string consisting of your BluePay SECRET_KEY, ACCOUNT_ID, and the REPORT_START_DATE 
+  and REPORT_END_DATE concatenated together.  For example:
+  "ABCDABCDABCDABCDABCDABCD1234123412342006-08-082006-08-09"
+  2) Calculate the md5 of the string created in step 1.
+  3) Convert the md5 to hexadecimal encoding, if necessary.  At this point it should
+  be exactly 32 characters in length.
+  4) Submit the hexadecimal md5 with your request, with the name "TAMPER_PROOF_SEAL".
+
+Additional Parameters:
+DO_NOT_ESCAPE=1
+  Causes the output to have all commas and quotes removed from the data and to be simply comma-separated.  Much like bpdailyreport's output.
+QUERY_BY_SETTLEMENT=1
+  bpdailyreport2 queries by issue date of the transaction by default.  This switches it to query by settlement date.  NOTE: using this means you will only receive settled transactions in the output.  (i.e. no auths, voids, etc)
+QUERY_BY_HIERARCHY=1
+  Causes the output to include transactions from child accounts. The account_id field will be returned in the output.
+EXCLUDE_ERRORS=1
+  Causes the report to only include approvals and declines; this will make it match our billing numbers exactly (since we do not bill for errors)
+MODE=LIVE or MODE=TEST
+  Allows you to choose to query LIVE transaction data or TEST transaction data.  Defaults to LIVE.
+
+# NEW - Aggregate Parameters
+# It's possible to request an aggregate report instead of a detailed report.  When you do this, the 
+# columns returned in the output will be the count of transactions, the sum of their amounts, and
+# whatever columns you request as below, instead of the standard output.
+AGG_QUERY=1
+  Turns on the aggregate reporting feature (can be used with any of the params above, like QUERY_BY_SETTLEMENT)
+AGG_FIELDS= space-separated list of fieldnames to aggregate.  Fieldnames are mostly the same as in output, below, with
+  the exception that you cannot aggregate by "id" or "amount".  
+  Example (after uri-encoding): "AGG_FIELDS=payment_type%20trans_type%20card_type"
+
+
+# Output parameters
+
+The first line of the body of the response contains a list of the field names used 
+through the remainder of the lines.  Please note that you should parse based on the
+contents of the first line as the number or order of fields may change in a 
+future revision.
+
+Also, note when using the AGG_QUERY feature, the output columns will consist of only the 
+columns requested for aggregation, plus a sum of the transaction amounts and counts.
+
+Version 1 output fields:
+id
+  Length 12
+  The 12-digit transaction ID assigned to this transaction by BluePay.
+payment_type
+  Maximum length 8
+  May be 'ACH' for ACH transactions, or
+  'CREDIT' for credit card transactions.
+trans_type
+  Maximum length 8
+  The type of transaction run.
+  'AUTH'
+  'CAPTURE'
+  'CREDIT'
+  'REFUND'
+  'SALE'
+  'VOID'
+amount
+  Maximum length 9
+  The monetary amount for which the transaction was run.
+card_type
+  Maximum length 4
+  A four-character indicator of the credit card type used, if any.  Possible values are:
+   AMEX = American Express, 
+   MC   = MasterCard, 
+   DISC = Discover, 
+   VISA = VISA, 
+   JCB  = JCB, 
+   DCCB = Diner's Club or Carte Blanche,
+   ENRT = EnRoute,
+   BNKC = BankCard,
+   SWTC = Switch,
+   SOLO = Solo
+payment_account
+ Maximum length 32
+  The payment account used for the transaction. If a credit card is used, 12 x's followed by the last four digits will be returned. 
+  If a check is used the following string is returned "<account type>:<routing number>:<x's><last four digits of account number>" ie. "C:123123123:xxxxxx4321" 
+  Account Type: 'C' is checking and 'S' is savings.
+order_id
+  Maximum length 128
+  The merchant-supplied or system supplied order ID.
+invoice_id
+  Maximum length 64
+  The merchant-supplied or system supplied invoice ID.
+custom_id
+  Maximum length 16
+  The merchant-supplied value for Custom ID 1.
+custom_id2
+  Maximum length 64
+  The merchant-supplied value for Custom ID 2.
+master_id
+  Length 12
+  The trans_id if the current transaction was generated from a previous transaction.
+status
+  Length 1
+    '1' for approved, '0' for declined, 'E' for error.
+f_void
+  Length 1
+  A flag to identify if the transaction was a void.
+message
+  Maximum length 64
+  Some human parsable text describing the reason of the transaction.  For settlements this normally just reads "Approved".
+origin
+  Maximum length 16 
+  Where the transaction originated.  Possible values are:
+  bp10emu:      Weblink
+  bp20post:     Weblink 2
+  asbyemu:      Assurebuy Emulation mode
+  a.net-aim:    Authorize.net Emulation mode
+  VTerm:        Input on Virtual Terminal
+  AGG:          Aggregation
+  BATCH:        
+  CAPQUEUE:     
+  FRAUDSCRUB:   
+  REBILL:       
+  REJECT:       Automatic reject or chargeback from bank
+issue_date
+  Length 19
+  The date that the transaction was entered into BluePay. ie. "yyyy-mm-dd hh:mm:ss" 
+settle_date
+  Length 19
+  The date and time of settlement for the transaction. ie. "yyyy-mm-dd hh:mm:ss" 
+rebilling_id
+  Length 12
+  The rebilling sequence ID if this transaction was initiated by a rebill.
+settlement_id
+  Length 12
+  The batch ID for the transaction.
+card_expire
+  Length 4
+  Credit card expiration date in MMYY format
+bank_name
+  Length 64
+  BluePay currently returns the name of the bank for any ACH transactions, and may
+  return the same for credit card TX in the future.
+addr1
+  Length 64
+addr2
+  Length 64
+city
+  Length 32
+state
+  Length 16
+zip
+  Length 16
+memo
+  Length 4096
+phone
+  Length 16
+email
+  Length 64
+auth_code
+  Length 8
+  Contains the credit card authorization code in the case of a successful TX.  This field will display the reject code on ACH VOIDS.
+name1
+  Length 32
+name2
+  Length 32
+company_name
+  Length 64
+backend_id
+  Length 2048
+account_id
+  Length 12
+  The account_id will only appear when QUERY_BY_HIERARCHY=1.
+
+Additional version 2 response fields:
+avs_result
+cvv_result
+merchdata
+card_present
+
+
+

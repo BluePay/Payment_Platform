@@ -1,0 +1,234 @@
+## BluePay Hosted Payment Form (SHPF)
+## Documentation 2013-11-25
+
+
+
+## DESCRIPTION:
+BluePay Hosted Payment Form allows the merchant to supply BluePay with an HTML 
+payment form and associated static content, to be hosted on the BluePay servers.  
+This may help reduce the merchant's PCI liability.  This will generally be used 
+in conjunction with the bp10emu (aka "weblink") API; the HTML form's action will 
+be a POST to bp10emu.
+
+
+
+## UPDATE HISTORY:
+
+2013-11-25  - added SHPF_YEARBLOCK information
+2013-05-20  - added MASTER_ID information
+2010-03-26a - new SHPF_ substitution variables
+2010-03-26a - added note about XSS, IE8
+2010-03-26a - added SECTION LISTING
+2010-03-18b - spelling fixes
+2010-03-18a - added ERROR CONDITIONS section
+2010-03-17b - added note about elimination of blank variables to variable 
+              substitution section.
+            - added specification that md5 is in hexadecimal encoding.
+
+## SECTION LISTING:
+
+SYSTEM OVERVIEW
+INPUT
+QUERY PARAMETERS
+VARIABLE SUBSTITUTION
+OUTPUT
+ERROR CONDITIONS
+HANDLING STATIC CONTENT
+NOTES ON SHPF_TPS, XSS, IE8
+EXAMPLE of SHPF_TPS_DEF and SHPF_TPS
+
+
+
+## SYSTEM OVERVIEW:
+
+* The merchant will design HTML and associated javascript/css/images/etc.  
+  Within the HTML, they can put placeholders which will be replaced later with 
+  variables.  These placeholders have the form of ${IDENTIFIER} so for example, 
+  you might do something like:
+
+  <INPUT type="hidden" name="TAMPER_PROOF_SEAL" value="${OUR_TPS}">
+
+* Once this HTML is provided to BluePay (via email), BluePay will put it in an 
+  accessible place on secure.bluepay.com.  Optionally, the merchant can work 
+  with us to give us a subdomain to use on our servers, but this will incur the 
+  additional overhead of purchasing a certificate and maintaining the DNS setup 
+  appropriately. 
+
+* To use the system:
+
+  1) Merchant causes customer's browser to make a GET or POST request to 
+     https://secure.bluepay.com/interfaces/shpf
+
+  2) BluePay reads the posted query parameter named SHPF_FORM_ID and loads the 
+     appropriate HTML on our system,  validates the SHPF_TPS, if present, then 
+     it takes all query parameters that do not begin with SHPF_, and replaces 
+     any ${IDENTIFIER} strings in the HTML with the value of the same IDENTIFIER 
+     query parameter. 
+
+  3) The parsed HTML is returned to the customer.
+
+     Presumably, the parsed HTML contains a form, the action of which is to POST 
+     to bp10emu, and as per the bp10emu specs, the response from bp10emu is a 
+     redirect -- presumably to the merchant's servers.
+
+
+
+
+## INPUT:
+
+Input to BluePay Hosted Payment Form is in the form of an HTTP GET or POST, with 
+certain query parameters included.  The URL of BluePay Hosted Payment Forms is 
+https://secure.bluepay.com/interfaces/shpf
+
+
+
+
+## QUERY PARAMETERS:
+
+Note all variable names that are recognized by the BluePay Hosted Payment Form 
+are prefixed with "SHPF_".  Any variable that begins with SHPF_ is considered 
+ineligible for variable substitution.  All other query parameters are used in 
+substitution.
+
+SHPF_FORM_ID          = a Bluepay assigned identifier, up to a max of 12 chars 
+                        (alphanumeric - assigned by BluePay)
+SHPF_ACCOUNT_ID       = The 12-digit Bluepay gateway account ID
+SHPF_TPS_DEF          = a space-separated list of fields to md5 hash sum over
+SHPF_TPS              = Calculated as the value of the merchant's SECRET KEY, 
+                        concatenated with the values of the fields named in 
+                        SHPF_TPS_DEF, in order, then take the (hex) md5 of that 
+                        string.  (See example below)
+
+MASTER_ID (optional)  = The transaction ID of a previous transaction to make 
+                        that transaction's data available for substution into a 
+                        template. MASTER_ID must be listed in SHPF_TPS_DEF to 
+                        use this feature.
+
+
+## VARIABLE SUBSTITUTION:
+
+Any query parameter not prefixed with SHPF_ is passed into our variable 
+substitution system, which simply parses through the HTML - a single pass, so no 
+nested variables are allowed - and replaces each instance of ${X} with the value 
+of the same-named X query parameter.  Any remaining strings in the HTML that are 
+of the form ${X} (i.e. variables for which no substitution was provided) will be 
+replaced with nothing, so no strings of the form ${X} will remain in the output 
+HTML.
+
+In addition, the following substitution variables are in the hosted payment form:
+
+SHPF_STATIC_PATH       = the correct pathname for a client to use to request 
+                         static content.  See "HANDLING STATIC CONTENT" below.
+SHPF_TIMESTAMP         = the current time, in ISO format: "YYYY-MM-DD HH:MM:SS"
+SHPF_MISSING_PCOUNT    = the number of fields that should be included in 
+                         SHPF_TPS_DEF and are not.
+SHPF_VULNERABLE_FIELDS = a comma-separated list of fields that are missing from 
+                         the SHPF_TPS_DEF.
+SHPF_YEARBLOCK         = Substution variable that will display a list of <option>
+                         tags for the current year and the next 8 years.
+                         Usage Sample:
+                         <select name="CC_EXPIRES_YEAR">
+                             ${SHPF_YEARBLOCK}
+                         </select>
+
+If a MASTER_ID is provided the following field names are available for 
+substitution to insert information from the previous transaction into the hosted 
+payment form.
+
+card_expire            = MMYY
+amount 
+order_id 
+addr1 
+addr2 
+state 
+zip 
+memo 
+phone 
+email 
+issue_date             = Date and time of the previous transaction YYYY-MM-DD HH:MM:SS
+city 
+name1 
+name2 
+payment_type 
+payment_account        = Masked payment account
+card_type 
+invoice_id 
+country 
+custom_id 
+custom_id2 
+bank_name 
+merchdata
+
+
+## OUTPUT:
+
+The only output from the BluePay Hosted Payment Form is the parsed HTML (and 
+appropriate headers) returned to the customer's browser as a response to the 
+input request, with the exception of error conditions, below.
+
+
+
+## ERROR CONDITIONS:
+
+If there is an unrecoverable error, BluePay Hosted Payment Form will display a 
+default error HTML created by BluePay.  The following are the current possible 
+error conditions that will result in this occurring:
+
+* "Missing SHPF_FORM_ID" = Was not provided in query parameters
+* "Invalid SHPF_FORM_ID" = Was provided, but no such form exists
+* "Unable to locate account key." = Invalid (or unsent) SHPF_ACCOUNT_ID
+* "Security Error" = SHPF_TPS is incorrect
+
+
+
+## HANDLING STATIC CONTENT:
+
+All static content must be prefixed with ${SHPF_STATIC_PATH} if it is to be 
+loaded off the BluePay server, as illustrated below:
+
+"Original" HTML on merchant's server:
+
+<img src="images/foo.jpg" alt="A foo.">
+
+HTML to load foo.jpg from images subdir on BluePay:
+
+<img src="${SHPF_STATIC_PATH}images/foo.jpg" alt="A foo.">
+
+
+## NOTES ON SHPF_TPS, XSS, IE8:
+
+If you do not include all variable substitution fields in the SHPF_TPS_DEF, then 
+there is a possibility of someone using your form in a cross-site-scripting 
+(XSS) attack.  We strongly recommend doing so.  If you use substitution 
+variables to provide any HTML, IE8 will block the request in an attempt to 
+prevent this.  However, if, and only if, all substitution variables are included 
+in the SHPF_TPS_DEF, then the BluePay Hosted Payment Form will print a header 
+that overrides this behavior in IE8, allowing the page to display.
+
+If you have IE8, you can view an example of this by following the two URLs 
+below.  They both provide the same content (some very badly-formed HTML) but the 
+first one will be blocked by IE8, and the second will not.  The difference is 
+the inclusion of all substitution variables in the SHPF_TPS_DEF.
+
+XSS-Vulnerable:  https://secure.bluepay.com/interfaces/shpf?SHPF_FORM_ID=shpftest&title=Hello&heading=Heading&text=%3Cform%20action%3D%22foozle.com%22%3E%3Cselect%3EXSS%3C%2Fselect%3E%3C%2Fform%3E&SHPF_ACCOUNT_ID=100001302235&SHPF_TPS_DEF=SHPF_ACCOUNT_ID&SHPF_TPS=eaa59181c84800c6cedca53106395748
+
+XSS-Protected: https://secure.bluepay.com/interfaces/shpf?SHPF_FORM_ID=shpftest&title=Hello&heading=Heading&text=%3Cform%20action%3D%22foozle.com%22%3E%3Cselect%3EXSS%3C%2Fselect%3E%3C%2Fform%3E&SHPF_ACCOUNT_ID=100001302235&SHPF_TPS_DEF=SHPF_ACCOUNT_ID%20title%20heading%20text&SHPF_TPS=011b687847c8d828d83b9f87598af546
+
+
+
+## EXAMPLE of SHPF_TPS_DEF and SHPF_TPS:
+
+Assume your SECRET KEY is 1234
+
+https://secure.bluepay.com/interfaces/shpf?SHPF_FORM_ID=someform&OUR_URL_1=foo&OUR_PRICE=1.00&SHPF_TPS_DEF=SHPF_FORM_ID%20OUR_URL_1%20OUR_PRICE&SHPF_TPS=2c6ec2acd3a3530244e9cf2a48b12bb8
+
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
+SHPF_TPS in this case would have been calculated as the md5 (in hex) of 
+"1234someformfoo1.00"
+
+It is left to the discretion of the merchant to decide what fields to include in 
+the SHPF_TPS_DEF -- if any -- but it is highly recommended to include any fields 
+which you do not wish to allow to be changed by a malicious user.   As you are 
+making this decision, please bear in mind the possibility of XSS attacks through 
+the manipulation of the substitution variables. 
+

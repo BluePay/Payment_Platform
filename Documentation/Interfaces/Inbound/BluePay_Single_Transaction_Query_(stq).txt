@@ -1,0 +1,61 @@
+URL: https://secure.bluepay.com/interfaces/stq
+
+Input/query to the script in standard https POST format, in the body.
+Output/response uri-encoded name-value pairs in the body.
+
+Last Updated: 2013-05-17
+
+Required Parameters:
+ACCOUNT_ID
+TAMPER_PROOF_SEAL
+REPORT_START_DATE (YYYY-MM-DD HH:MM:SS)
+REPORT_END_DATE (YYYY-MM-DD HH:MM:SS)
+
+Default TAMPER_PROOF_SEAL Definition:
+SECRET KEY + ACCOUNT ID + REPORT START DATE + REPORT END DATE
+
+Optional Input Parameters:
+EXCLUDE_ERRORS set to 1 to ignore error transactions in search.
+MODE defaults to LIVE
+TPS_DEF - Alternate list of fields to use for tamper proof seal calculation.
+
+Optional Input Parameters / Standard Output Parameters:
+id
+payment_type  CREDIT, ACH
+trans_type    AUTH, SALE, CAPTURE, REFUND, REBCANCEL
+amount
+card_type     AMEX,MC,DISC,VISA,JCB,DCCB,ENRT,BNKC
+payment_account
+order_id
+invoice_id
+custom_id
+custom_id2
+master_id
+status
+f_void
+message
+origin
+issue_date
+settle_date
+rebilling_id
+settlement_id
+card_expire
+bank_name
+addr1
+addr2
+city
+state
+zip
+phone
+email
+auth_code
+name1
+name2
+company_name
+memo
+backend_id
+remote_ip
+avs_result
+cvv_result
+merchdata
+card_present

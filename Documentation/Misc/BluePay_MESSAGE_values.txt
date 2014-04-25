@@ -1,0 +1,304 @@
+                                                                     
+                                                                     
+                                                                     
+                                             
+####################################
+# Advice on handling messages:
+
+  Suggestion for coding is to check the status code on the transaction first; if it indicates approval, then present Approval to the customer.  If it indicates a decline or error, then drop into parsing the subset of messages that you reasonably expect.  If you fail to match the message in your table, then provide the customer with a generic message.  The vast majority of the messages below indicate some kind of coding or logic error that you will not encounter in production.
+
+
+
+
+####################################
+# List of responses in 'message' field from Bluepay 
+
+
+ACH Approved
+  Standard Approval message for ACH transactions
+
+ACH not eligible for Aggregation
+AGGREGATE QUEUED
+  Both responses are from the Aggregate system
+
+ACH_ROUTING and ACH_ACCOUNT required
+  Specific to ACH processing.
+
+Already Captured
+  Attempt to CAPTURE an AUTH that has already been CAPTUREd.
+
+Already Voided
+  Attempt to VOID a transaction that is already VOID.
+
+Amount may not be zero.
+  For any transaction other than AUTH, no zero-dollar amounts allowed.
+
+APPROVED
+Approved
+  Standard Approved messages
+
+AUTOCAP NOT VALID UNLESS AUTH
+  Ran a transaction with AUTOCAP (deprecated option) that wasn't an AUTH.
+
+AVS DECLINE
+CVV2 DECLINE
+  Responses returned when AVS/CVV validation failed by Bluepay
+
+Already Captured
+Already Voided
+
+App ACH Credit
+App ACH Sale
+Approved Auth
+Approved Capture
+Approved Return
+Approved Sale
+Approved Void
+Declined Auth
+Declined Sale
+  Returned on Approved TEST mode transactions; transaction type is echoed in message
+
+Can only REFUND or VOID approved transactions
+  Attempt to REFUND or VOID a declined transaction.
+
+Cannot CAPTURE Zero AUTH
+  Attempt to CAPTURE a 0-dollar AUTH
+
+Cannot <TRANS TYPE> an updated transaction, <TRANS TYPE> the update instead.
+  Specific to tip update, cannot REFUND or VOID or UPDATE the original non-updated transaction ID.
+
+Cannot VOID a CAPTURED AUTH (void the CAPTURE instead).
+  Attempt to VOID a CAPTUREd AUTH
+
+Cannot VOID except for full amount.
+  Attempt to VOID a partial amount.
+
+CAPTURE FAILED - Perhaps this AUTH is already scheduled for CAPTURE?
+
+CARD ACCOUNT NOT VALID
+  Credit card fails LUHN checksum.
+
+COULD NOT LOCATE ORIGINAL TRANSACTION
+  Response indicates Bluepay was unable to lookup the master_id.
+
+Can only <TRANS TYPE> approved transactions.
+  Attempt to VOID/REFUND/UPDATE a declined transaction.
+
+Cannot CAPTURE Zero AUTH
+
+Cannot REFUND a <TRANS TYPE>
+  Attempt to REFUND a CREDIT, REFUND, or AUTH.
+
+Cannot <TRANS TYPE> a settled transaction.
+  Attempt to tip UPDATE or VOID a settled transaction.
+
+Cannot UPDATE a <TRANS TYPE>
+  Attempt to tip UPDATE a VOID or AUTH.
+
+Cannot VOID a CAPTURED AUTH (void the CAPTURE instead).
+Cannot VOID except for full amount.
+
+Card Expired
+  Expiration date on transaction is in the past.
+
+Card Type Not Supported
+  Returned when your account is not configured to accept a particular card type.
+
+Cash back only valid on DEBIT.
+  Specific to (pin) debit.
+
+CREDIT Rebillings only supported on ACH
+  Specific to Rebilling, CREDIT rebillings only possible with ACH.
+
+DD_ROUTING and DD_ACCOUNT required
+  Specific to (European) Direct Debit
+
+DEBIT only supported for SALE and REFUND or CREDIT
+  Specific to (pin) debit.
+
+DEBIT require Track 2 (Swipe) Data.
+  Specific to (pin) debit.
+
+DECLINED
+Decline
+  Standard declined transaction messages
+
+DUPLICATE
+  Returned on approved or declined transactions that are not processed because of duplicate scrubbing.
+
+ENCRYPTION ERROR
+  Unable to encrypt credit card data.
+
+Error reading master transaction
+  Unable to locate tokenized transaction.
+
+ERROR SELECTING PROCESSOR
+  Bluepay failed to select a processor to handle the transaction.  Can happen if you only have one processor and it's in the middle of settling when a new transaction comes in.
+
+Expiration date required for CREDIT
+  Credit card with no expiration date.
+
+Expired Card
+
+<FIELDNAME> CHECK FAILED
+  Format Checking field failed validation
+
+<FIELDNAME> INVALID
+  Format Checking string is incorrect
+
+<FIELDNAME> too long
+  Credit Card number or CVV or expiration date too long.
+
+<FIELDNAME> TOO LONG
+  Format Checking field is too long.
+
+FS DECLINE XXXXXXXXXXXX
+  Indicates the Fraud Scrubbing system declined the transaction.
+
+General Error
+  Call Bluepay to investigate.
+
+INFORMATION STORED
+  Standard response on zero dollar AUTH.
+
+Invalid CVV2
+  CVV2 is not 3-4 digits long.
+
+Invalid Documentation Type
+  Returned on ACH that has invalid doc_type, for example a CREDIT with doc_type of WEB
+
+INVALID DUKPT
+  Bad encryption data.
+
+INVALID KSN
+  Bad encryption data.
+
+INVALID TRACK DATA
+  Swiped Credit Card Data is not valid.
+
+Invalid transaction type.
+  Transaction Type is not SALE, AUTH, CAPTURE, REFUND, CREDIT, VOID, etc.
+
+MISSING PAYMENT ACCOUNT
+  No card number or ACH account information.
+
+Master ID required for UPDATE
+Master ID required for VOID
+Master ID required for CAPTURE
+  Attempt to run a transaction without an auth_code or token.
+
+Missing <FIELDNAME>
+  Required field is missing.
+
+Missing PIN data
+  Specific to (pin) debit.
+
+Need voice auth code to CAPTURE this AUTH
+  Attempt to CAPTURE a declined AUTH
+
+No checking account
+
+Only AUTH can be CAPTURED
+  Attempt to CAPTURE a non-AUTH.
+
+PAYMENT ACCOUNT INFO ERROR
+  Credit card encrypted by Bluepay missing required data.
+
+ROUTING NUMBER NOT VALID
+  Routing number on ACH failed checksum.
+
+Refund/VOID amount cannot exceed original charge amount
+  Attempt to REFUND or VOID more than the original transaction amount.
+
+REFUND may only be performed on original card.
+  Occurs when missing permission to issue refund to a different card number (not yet in production)
+
+Routing Does Not Exist
+  Routing number on ACH failed lookup.
+
+ROUTING NUMBER NOT VALID
+  ACH Routing number failed checksum or bank lookup.
+
+SECURITY ERROR
+  Bad account, Tamper Proof Seal, Disallowed IP address, etc.
+
+There was an unspecified error
+  System-level error while running the transaction.
+
+This AUTH is VOID
+  Attempt to CAPTURE a VOIDed AUTH.
+
+TRANSACTION IS TOO OLD
+  TX Validity Period has expired.
+
+TRANSACTION TYPE REQUIRED
+  Missing Transaction Type
+
+<TRANS TYPE> not supported for ACH
+  Specific to ACH processing.
+
+This AUTH is VOID
+  Attempted to CAPTURE an AUTH that has been VOIDed and returned to customer already.
+
+Unable to locate account
+  Bad account ID, account closed, etc.
+
+Unable to locate user
+  Bad user ID, user disabled, etc.
+
+Unknown Error
+  Call Bluepay to investigate.
+
+VOID cannot be undone
+  Attempt to VOID a VOID.
+
+VS DECLINE X
+  Indicates the Velocity Scrubbing system errored the transaction (too many transactions per timeframe)
+
+Your account is in TEST mode; please contact Bluepay.
+  Attempted to run transaction in LIVE mode on TEST-only account.
+
+
+
+
+#################################
+# COMMON RESPONSES FROM ISSUING BANKS:
+
+ADDRESS MATCH
+AUTH/TKT
+AUTH/TKT  XXXX
+Approval
+CALL CENTER
+CALL CENTER XXXXXX
+CALL XXXXXXXXXXX
+CARD NO. ERROR
+CVV2 MISMATCH
+DECLINE
+DECLINE 14
+Declined; CVV2 failure
+Do Not Honor
+EXACT MATCH
+EXPIRED CARD
+FAILURE CV
+HOLD-CALL
+INV CVV2 MATCH
+INVALID AMOUNT
+INVALID CARD #
+INVALID EXP DATE
+INVALID MRCH #
+Invalid Issuer
+Invalid Transaction
+Insufficient Funds
+NO  MATCH
+Pickup Card
+RETURN
+Re-enter
+Referral (Call)
+Restricted Card
+SALE VOIDED XXX
+SERV UNAVAILABLE
+TKT CODE
+Transaction not permitted
+VER UNAVAILABLE
+ZIP  MATCH
+

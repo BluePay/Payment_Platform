@@ -1,0 +1,101 @@
+###########################
+BluePay Rebilling Notification System
+Version 1.0
+2012-12-20
+
+###########################
+Introduction
+
+This system is intended to provide automatic notification to the merchant when a 
+rebilling is run.  This is done by means of an HTTP POST to a merchant-supplied 
+CGI.
+
+###########################
+Set Up
+
+Within the online administration system, choose "Account List" from the menu.  
+Then find your account, and choose the "view" (eyes) icon.  On this page, you 
+can choose the "edit" (pencil) icon to enter edit mode.  Supply the URL of your 
+cgi where "Rebilling POST URL" is indicated.
+
+Thereafter, when the BluePay system runs a rebilling for you, it will POST the 
+following parameters to the indicated URL:
+
+account_id
+  Gateway account ID that the transaction was processed on.
+
+account_name
+  The gateway account name.
+
+bluepay_blurb
+  Message displayed at the bottom of email receipts.
+
+BP_STAMP
+BP_STAMP_DEF
+    BP_STAMP is an MD5 of the merchant's SECRET KEY, concatenated to the values 
+of various fields returned from BluePay.  The exact fields and their order is 
+determined by BP_STAMP_DEF.  A merchant should properly split BP_STAMP_DEF on 
+whitespace, then take their SECRET KEY, and loop through the field names in the 
+split BP_STAMP_DEF, concatenating each one's value to the end of the 
+SECRET_KEY and previous fields.  If a field is absent from the post, 
+concatenate nothing (the null string) for its value. Finally, take the MD5 of 
+the resulting string, and compare it to the value of BP_STAMP.  If they match, 
+the response is genuine.  If they do not, the response has been tampered with.
+
+cycles_remain
+  The number of rebills remaining.
+
+rebill_id
+  Number attached to the rebill schedule.
+
+first_name
+  Customer's first name.
+
+last_name
+  Customer's last name.
+
+next_prenotify_date
+  yyyy-mm-dd hh:mm:ss
+  If prenotification is activated on the account this is the date that the next
+prenotify email will be sent.
+
+next_rebill
+usual_rebill
+  yyyy-mm-dd hh:mm:ss
+  Date that the next rebilling will occur.
+
+payment_account
+  xxxxxxxxxxxxnnnn
+  Masked credit card number or bank account number.
+
+rebilling_amount
+  Amount that will be charged each time that the rebilling occurs.
+
+retry_num
+  The quantity of reattempts that have occurred if automatic retries are 
+enabled.
+  
+sched_expr
+  The expression used to determine the date of the next rebilling.
+
+start_date
+  Field name returned but no data is currently returned.
+
+status
+  The current status of the rebilling. Possible statuses are active, deleted, 
+stopped, expired, failed, error.
+
+user_email
+  Email address of the gateway user account associated with the rebilling.
+
+user_id
+  User ID of the gateway user account associated with the rebilling.
+
+
+
+######################
+Response format
+
+BluePay expects your CGI to return a status of 200.  In the future, returning 
+other values may effect further processing of the rebilling.
+

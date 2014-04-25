@@ -1,0 +1,109 @@
+###
+# BluePay 2.0 "Daily Report" Interface
+
+# Description
+
+This interface is intended to be polled by a merchant on a daily basis, to get
+updates on VOID/DECLINED/SETTLED status for transactions on the day prior.
+
+The URL of this interface is currently:
+https://secure.bluepay.com/interfaces/bpdailyreport
+
+# Input format
+
+Input to this web service is formatted as a standard HTTP "POST" is formatted. 
+The parameters to the service may be URI-encoded in the body of the request,
+as is standard for a POST. 
+
+# Output format
+
+Output will be in the immediate response to the POST, in standard HTTP response
+format with a header and a body separated by a newline.  The header contains 
+and HTTP status line which will indicate a status of 200 for success and 400
+for an error or other failure.  If successful, the body of the response will 
+contain a number of lines, one for each updated transaction.  Each line contains
+a comma-separated list of values you may use to tie the transaction back to 
+data in your own system.  If failed, the output will contain only a single line,
+containing a message indicating the reason for failure.  Any commas existing in 
+the data will be escaped by preceding them with a backslash character: ',' 
+becomes '\,'.
+
+# Input parameters
+
+ACCOUNT_ID
+  Set to your 12-digit BluePay 2.0 Account ID.
+PAYMENT_TYPE
+  May be 'ACH' to request updated statuses for E-check transactions, or
+  'CREDIT' to request statuses for credit card transactions.
+INCLUDE_DECLINES
+  Pass this parameter with a value of '1' to included declined transactions in the output.
+REPORT_START_DATE
+REPORT_END_DATE
+  These are the dates within which transactions will be reported.  Dates
+  are formatted in ISO standard format:  YYYY-MM-DD.  The report will begin midnight
+  of the start day, and end at 11:59:59.999999 on the day before the end date.  So,
+  for example, if you wish to get the list of all status updated on 2006-08-08, you
+  would set REPORT_START_DATE to 2006-08-08 and REPORT_END_DATE to 2006-08-09.
+TAMPER_PROOF_SEAL
+  And md5 hash used to verify the request.  This md5 should be generated as follows:
+
+  1) Create a string consisting of your BluePay SECRET_KEY, ACCOUNT_ID, and the REPORT_START_DATE 
+  and REPORT_END_DATE concatenated together.  For example:
+  "ABCDABCDABCDABCDABCDABCD1234123412342006-08-082006-08-09"
+  2) Calculate the md5 of the string created in step 1.
+  3) Convert the md5 to hexadecimal encoding, if necessary.  At this point it should
+  be exactly 32 characters in length.
+  4) Submit the hexadecimal md5 with your request, with the name "TAMPER_PROOF_SEAL".
+
+# Output parameters
+
+The first line of the body of the response contains a list of the field names used 
+through the remainder of the lines.  These are:
+id
+  Length 12
+  Maximum length 128
+  The merchant-supplied or system supplied order id.
+f_void
+  Length 1
+  A flag to identify if the transaction was a void.
+status
+  Length 1
+  '1' for approved, '0' for declined, 'E' for error.
+origin
+  Maximum length 16 
+  Where the transaction originated.  Possible values are:
+  bp10emu:      Weblink
+  bp20post:     Weblink 2
+  asbyemu:      Assurebuy Emulation mode
+  a.net-aim:    Authorize.net Emulation mode
+  VTerm:        Input on Virtual Terminal
+  AGG:          Aggregation
+  BATCH:        
+  CAPQUEUE:     
+  FRAUDSCRUB:   
+  REBILL:       
+  REJECT:       Automatic reject or chargeback from bank
+message
+  Maximum length 64
+  Some human-parsable text describing the reason of the transaction.  For settlements this normally just reads "Approved".
+settle_date
+  Length 19
+  The date and time of settlement for the transaction. ie. "yyyy-mm-dd hh:mm:ss" 
+master_id
+  Length 12
+  The trans_id if the current transaction was generated from a previous transaction.
+issue_date
+  Length 19
+  The date that the transaction was entered into BluePay. ie. "yyyy-mm-dd hh:mm:ss" 
+trans_type
+  Maximum length 8
+  The type of transaction run.
+  'AUTH'
+  'CAPTURE'
+  'CREDIT'
+  'REFUND'
+  'SALE'
+  'VOID'
+rebilling_id
+  Length 12
+  The rebilling sequence ID if this transaction was initiated by a rebill.

@@ -1,0 +1,62 @@
+Rebilling ID
+ Length 12
+ The 12-digit rebill ID assigned to this rebill sequence by BluePay.
+	
+Owner ID
+ Length 12
+ The BluePay ID for the user responsible for creating and running the rebill sequence.
+
+Account ID
+ Length 12
+ The 12-digit ID assigned by BluePay for the merchant responsible this rebilling sequence.
+
+Template ID
+ Length 12
+ The 12-digit ID assigned by BluePay to the transaction which is the basis for the rebilling sequence.
+
+Result
+ Maximum Length 8
+ 'active'
+ 'canceled'
+ 'deleted'
+ 'error'
+ 'expired'
+ 'failed'
+ 'running'
+ 'stopped'
+
+Next Attempt
+ Timestamp without time zone
+ The date that the rebilling sequence will run a new transaction. i.e. "mm/dd/yyyy hh:mm"
+  
+Last Billing
+ Timestamp without time zone
+ The date that the last rebilling occurred. i.e. "mm/dd/yyyy hh:mm" 
+
+Rebilling Period
+ Maximum Length 16
+ The frequency of the rebilling sequence.
+
+Cycles Remaining
+ Maximum Length 6
+ The number of cycles left before the rebilling stops.
+ 
+Rebilling Amount
+ Maximum length 9
+ The monetary amount for which the rebilling sequence will run.
+
+Next Amount
+ Maximum length 9
+ The monetary amount for which the next transaction in the sequence will run.
+
+Cardholder Name 1	
+ Maximum length 32
+ The cardholder's name 1.
+
+Cardholder Name 2
+ Maximum length 32
+ The cardholder's name 2.
+
+Owner Name
+ Maximum length 16 
+ The name of the user responsible for creating and running the rebill sequence.

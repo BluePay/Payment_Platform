@@ -1,0 +1,287 @@
+###
+# BluePay  2.0 "Batch Upload" Web Interface
+
+# Description
+
+This web interface is intended to be used by a merchant to upload a batch of transactions.
+
+The URL of this interface is currently:
+https://secure.bluepay.com/trans/batchupload?OP=NEW
+
+The URL can be reached by going to Processing->Batching->File Upload->New Upload within the secure.bluepay.com menu.
+
+The status must be set to Active and the "Save Changes" button must be pressed before the transactions will process.
+
+The status of the transactions can be checked by either pressing the "Refresh Display" button or by going to Processing->Batching->File Upload->Upload Search/List.
+
+# Input format
+
+Input to this web interface utilizes a CSV file. The first line must contain all of the field names used throughout the remainder of the file. All data is expected to be quote-delimited and comma-separated.
+For example:
+
+"trans_type","payment_acc","card_expire","amount","name1","name2"
+"SALE","4111111111111111","0412","10.00","Batch","Test 1"
+"SALE","4111111111111111","0409","11.00","Batch","Test 2"
+"SALE","4111111111111111","0415","1.00","Batch","Test 3"
+"SALE","4111111111111111","0909","2.00","Batch","Test 4"
+"SALE","4111111111111111","1010","1.00","Batch","Test 5"
+"SALE","4111111111111111","0709","2.00","Batch","Test 6"
+"SALE","4111111111111111","0412","1.00","Batch","Test 7"
+"SALE","4111111111111111","0714","2.00","Batch","Test 8"
+"SALE","4111111111111111","0412","1.00","Batch","Test 9
+
+# Input parameters
+The first line in the body of the POST will contain a list of the field names used through the remainder of the file, as described above. 
+
+The list of fields allowed in the batch upload are:
+trans_type
+  Maximum length 8
+  -- Required
+  AUTH = Reserve funds on a customer's card. No funds are transferred.
+  SALE = Make a sale. Funds are transferred.
+  CAPTURE = Capture a previous AUTH. Funds are transferred.
+  CREDIT = Give a customer funds. Funds are transferred.
+  VOID = Cancel a previous SALE or CAPTURE before it has settled.
+  REFUND = Reverse a previous SALE. Funds are transferred.
+  REBCANCEL = Cancel a rebilling sequence.
+payment_acc
+  Maximum length 32
+   -- Required for AUTH/SALE --Optional for VOID/REFUND and if master_id is passed
+  The payment account used for the transaction. Credit card number or bank account information.
+  Please see the note below for specifics on processing ACH.
+card_expire
+  Maximum length 4
+  -- Required for payment_type CREDIT -- Required for AUTH/SALE --Optional for VOID/REFUND
+  Expiration date for a credit card in MMYY. This will be blank for an ACH.
+payment_type
+  Maximum length 8
+  -- Optional
+  'ACH' for ACH transactions
+  'CREDIT' for credit card transactions. Default.
+bank_name
+  Maximum length 64
+  -- Optional
+  The name of the card issuing bank or bank ACH account.
+f_corporate
+  Length 1 
+  -- Optional
+  This flag must be set to '1' for ACH transactions with a doc type of 'CCD'.
+f_rebilling
+  Length 1 
+  -- Optional
+  This flag can be set to '1' for rebilling transactions.
+doc_type
+  Length 3
+  -- Optional
+  Can be one of the following:
+    'PPD': Indicates you have a personal signed agreement on file for the customer, this is the default if not set.
+    'CCD': Indicates you have a company-signed agreement on file for the customer.
+    'WEB': Indicates the customer has agreed to the charges via an internet-based or electronic form.
+    'TEL': Indicates you have a recorded telephone call on file with the customer verbally agreeing to be charged.
+    'ARC': Indicates you have an actual signed, voided check from the customer.
+amount_tip
+  Maximum length 9
+  -- Optional
+  The tip amount, if any.
+amount_tax
+  Maximum length 9
+  -- Optional
+  The tax amount, if any.
+company_name
+  Maximum length 64
+  -- Optional
+  Must contain the company name if f_corporate is set to '1'.
+amount
+  Maximum length 9
+   -- Required for AUTH/SALE -- Optional for REFUND
+   If AMOUNT is sent for a REFUND, it will REFUND the AMOUNT sent. It will only refund up to the original
+transaction AMOUNT. If not sent, it will REFUND the full amount.
+name1
+  Maximum length 32
+  -- Optional
+  The cardholder's name 1.
+name2
+  Maximum length 32
+  -- Optional
+  The cardholder's name 2.
+addr1
+  Maximum length 64
+  -- Optional
+  The cardholder's address 1.
+addr2
+  Maximum length 64 
+  -- Optional
+  The cardholder's address 2.
+city
+  Maximum length 32 
+  -- Optional
+  The cardholder's city.
+state
+  Maximum length 16 
+  -- Optional
+  The cardholder's state.
+zip
+  Maximum length 16 
+  -- Optional
+  The cardholder's zip.
+email
+  Maximum length 64 
+  -- Optional
+  The cardholder's email.
+phone
+  Maximum length 16 
+  -- Optional
+  The cardholder's phone number.
+master_id
+  Maximum length 12
+  -- Optional
+  The trans_id (RRNO) of a previous transaction run against the payment account.
+  If master_id is passed, the following fields aren't required: payment_acc,card_expire
+order_id
+  Maximum length 128 
+  -- Optional
+  The merchant-supplied or system supplied order id.
+invoice_id
+  Maximum length 64
+  -- Optional
+  The merchant-supplied or system supplied invoice id. 
+custom_id
+  Maximum length 16
+  -- Optional
+  The merchant-supplied value for Custom ID 1.
+custom_id2
+  Maximum length 64
+  -- Optional
+  The merchant-supplied value for Custom ID 2.
+auth_code
+  Maximum length 8 
+  -- Optional -- Required for Capture
+  A six-character pseudo-ID from the front end processing network.
+memo
+  Maximum length 128 
+  -- Optional
+  A memo that was submitted with the transaction.
+
+NOTE: When performing an ACH, you must set the following:
+
+payment_acc = three fields, separated by colons. 
+First is account type. 'C' for checking and 'S' for savings. 
+Second is routing number. 
+Third is account. 
+So for example: "C:123456789:987654321" would be a valid formatting.
+payment_type = "ACH"
+doc_type = "WEB" for web, "PPD" for personal signed check, "CCD" for corporate
+
+do_rebilling
+  -- Optional
+  Set to '1' to create a rebilling.
+next_date
+  -- Optional
+  Date of first rebilling in ISO format YYYY-MM-DD
+sched_expr
+  -- Optional
+  Period between rebilling’s
+  1 MINUTE
+  1 MONTH
+  1 YEAR
+  1 HOUR
+  1 MINUTE
+cycles_remain
+  -- Optional
+  Quantity of times that rebilling should occur. Not set for infinite.
+reb_amount
+  -- Optional
+  Amount to charge on rebilling. Defaults to value in amount field if not set.
+reb_is_credit
+  -- Optional
+  '1' flags the rebill as a credit rather than a debit, for recurring payments from merchant to customer.
+  Not set for debit against customer's payment information.
+
+External Rebilling
+f_rebilling
+  -- Optional
+  Set to '1' for rebilling transactions created outside of the BluePay gateway.
+
+
+# Output format
+
+Output will be in a csv file and be available immediately following the processing of the input file.
+
+
+# Output parameters
+
+The first line in the output file will contain a list of the field names used through the remainder of the file. This file can be obtained by pressing the "Get batch output" button. The button will appear after the batch has completed.
+
+The list of fields are:
+line num
+  Maximum length 12
+  The line number for each row in the batch.
+batch status
+  Maximum length 8
+  The result of the transaction within the batch.
+  done = The transaction was processed.
+  error = The transaction was not able to be processed.
+batch message
+  Maximum length 32
+  The message of the transaction within the batch.
+trans type
+  Maximum length 8
+  AUTH = Reserve funds on a customer's card. No funds are transferred.
+  SALE = Make a sale. Funds are transferred.
+  CAPTURE = Capture a previous AUTH. Funds are transferred.
+  CREDIT = Give a customer funds. Funds are transferred.
+  VOID = Cancel a previous SALE or CAPTURE before it has settled.
+  REFUND = Reverse a previous SALE. Funds are transferred.
+  REBCANCEL = Cancel a rebilling sequence.
+trans status
+  Length 1
+  '1' for approved, '0' for declined, 'E' for error.
+trans message
+  Maximum length 64
+  Some human-parsable text describing the reason of the transaction.  For settlements this normally just reads "Approved".
+auth code
+  Maximum length 8 
+  A six-character pseudo-ID from the front end processing network.
+cvv2 result
+  Maximum length 1
+  The CVV2 result returned by the front end processor.
+avs result
+  Maximum length 1
+  The AVS result returned by the front end processor.
+trans id
+  Maximum length 12
+  The 12-digit transaction ID assigned to this transaction by BluePay.
+card type
+  Maximum length 4
+  A four-character indicator of the credit card type used, if any.  Possible values are:
+   AMEX = American Express, 
+   MC   = MasterCard, 
+   DISC = Discover, 
+   VISA = VISA, 
+   JCB  = JCB, 
+   DCCB = Diner's Club or Carte Blanche,
+   ENRT = EnRoute,
+   BNKC = BankCard,
+   SWTC = Switch,
+   SOLO = Sol
+payment_account
+  Maximum length 32
+  The truncated payment account used for the transaction. Credit card number or bank account information.
+amount
+  Maximum length 9
+  The amount of the transaction.
+name1
+  Maximum length 32
+  The cardholder's name 1.
+name2
+  Maximum length 32
+  The cardholder's name 2.
+custom_id
+  Maximum length 16
+  The merchant-supplied value for Custom ID 1.
+invoice_id
+  Maximum length 64
+  The merchant-supplied or system supplied invoice id. 
+order_id
+  Maximum length 128 
+  The merchant-supplied or system supplied order id.
